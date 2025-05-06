@@ -2,5 +2,3 @@ streamlit==1.44.1
 pillow==11.1.0
 tensorflow==2.16.1
 numpy >= 1.26.0, <= 1.26.4
-streamlit-option-menu==0.3.2
-streamlit-aggrid==0.2.2.post4

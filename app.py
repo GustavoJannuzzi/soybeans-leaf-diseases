@@ -53,6 +53,8 @@ with st.sidebar:
             "nav-link-selected": {"background-color": "green", "color": "white"}  # Cor do item selecionado
         }
     )
+    st.sidebar.empty()
+    st.button("Log-out")
 
 # Carregar conteúdo com base na seleção
 if selected == "Doenças":
