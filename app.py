@@ -42,8 +42,8 @@ import importlib
 with st.sidebar:
     selected = option_menu(
         '',
-        ["Home", 'Doenças', 'Modelo'],
-        icons=['house', 'search', 'info-circle'],
+        ["Home", 'Doenças', 'Modelo','Histórico'],
+        icons=['house', 'search', 'info-circle','collection'],
         default_index=0,
         menu_icon="cast",
         styles={
@@ -54,49 +54,60 @@ with st.sidebar:
         }
     )
 
+# Carregar conteúdo com base na seleção
+if selected == "Doenças":
+    doenças_module = importlib.import_module('paginas.doencas')
+    doenças_module.display_content()
+elif selected == "Modelo":
+    modelo_module = importlib.import_module('paginas.modelo')
+    modelo_module.display_content()
+elif selected == "Histórico":
+    modelo_module = importlib.import_module('paginas.historico')
+    modelo_module.display_content()
+elif selected == "Home":
+    #home_module = importlib.import_module('paginas.home')
+    # Interface Streamlit
 
-# Interface Streamlit
+    st.title('🪲 Identificação de Pragas em Folhas de Soja')
 
-st.title('🪲 Identificação de Pragas em Folhas de Soja')
+    uploaded_file = st.file_uploader("📷 Envie uma imagem de folha de soja", type=["jpg", "jpeg", "png"])
 
-uploaded_file = st.file_uploader("📷 Envie uma imagem de folha de soja", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Imagem carregada", use_column_width=True)
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Imagem carregada", use_column_width=True)
+        # Pré-processa a imagem
+        image_array = preprocess_image(image)
 
-    # Pré-processa a imagem
-    image_array = preprocess_image(image)
+        # Alimenta o modelo
+        interpreter.set_tensor(input_details[0]['index'], image_array)
+        interpreter.invoke()
 
-    # Alimenta o modelo
-    interpreter.set_tensor(input_details[0]['index'], image_array)
-    interpreter.invoke()
+        # Obtém o resultado
+        prediction = interpreter.get_tensor(output_details[0]['index'])
 
-    # Obtém o resultado
-    prediction = interpreter.get_tensor(output_details[0]['index'])
+        class_names = [
+            'Mossaic Virus',
+            'Southern Blight',
+            'Sudden Death Syndrome',
+            'Yellow Mosaic',
+            'Bacterial Blight',
+            'Brown Spot',
+            'Crestamento',
+            'Ferrugem',
+            'Powdery Mildew',
+            'Septoria'
+        ]
+        predicted_class = class_names[np.argmax(prediction)]
+        confidence = np.max(prediction)
 
-    class_names = [
-        'Mossaic Virus',
-        'Southern Blight',
-        'Sudden Death Syndrome',
-        'Yellow Mosaic',
-        'Bacterial Blight',
-        'Brown Spot',
-        'Crestamento',
-        'Ferrugem',
-        'Powdery Mildew',
-        'Septoria'
-    ]
-    predicted_class = class_names[np.argmax(prediction)]
-    confidence = np.max(prediction)
+        st.markdown(f"### 🧠 Predição: **{predicted_class}**")
+        st.write(f"Confiabilidade: {confidence * 100:.2f}%")
 
-    st.markdown(f"### 🧠 Predição: **{predicted_class}**")
-    st.write(f"Confiabilidade: {confidence * 100:.2f}%")
-
-    # Exibir informações adicionais
-    doencas = get_doencas()
-    if predicted_class in doencas:
-        st.markdown("## 📖 Detalhes sobre a doença detectada:")
-        exibir_doenca(predicted_class, doencas[predicted_class])
-    else:
-        st.info("Nenhuma informação detalhada disponível para essa doença.")
+        # Exibir informações adicionais
+        doencas = get_doencas()
+        if predicted_class in doencas:
+            st.markdown("## 📖 Detalhes sobre a doença detectada:")
+            exibir_doenca(predicted_class, doencas[predicted_class])
+        else:
+            st.info("Nenhuma informação detalhada disponível para essa doença.")
